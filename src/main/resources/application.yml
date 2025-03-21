@@ -1,0 +1,15 @@
+server:
+  port: 2000
+
+spring:
+  application:
+    name: grab-booking-service
+  config:
+    activate:
+      on-profile: default
+  data:
+    mongodb:
+      uri: mongodb://${MONGO_BOOKING_USERNAME}:${MONGO_BOOKING_PASSWORD}@${MONGO_BOOKING_URL}
+
+jwt:
+  secret: ${JWT_SECRET}
