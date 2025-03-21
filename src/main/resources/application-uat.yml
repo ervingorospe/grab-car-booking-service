@@ -6,7 +6,7 @@ spring:
     name: grab-booking-service
   config:
     activate:
-      on-profile: default
+      on-profile: uat
   data:
     mongodb:
       uri: ${MONGO_PREFIX}://${MONGO_BOOKING_USERNAME}:${MONGO_BOOKING_PASSWORD}@${MONGO_BOOKING_URL}
