@@ -7,6 +7,7 @@ import com.ervingorospe.grab_booking_service.model.entity.Customer;
 import com.ervingorospe.grab_booking_service.repository.BookingRepository;
 import com.ervingorospe.grab_booking_service.repository.CustomerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +28,7 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional
+    @PreAuthorize("@securityService.isOwnerOfAccount(#bookingRequestDTO)")
     public Booking save(BookingRequestDTO bookingRequestDTO) {
         Optional<Customer> existingCustomer = customerRepository.findByEmail(bookingRequestDTO.customer().email());
 
