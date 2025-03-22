@@ -2,13 +2,11 @@ package com.ervingorospe.grab_booking_service.model.DTO;
 
 import com.ervingorospe.grab_booking_service.model.entity.Customer;
 import com.ervingorospe.grab_booking_service.validate.phoneNumber.PhoneNumber;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotNull;
 
 
 public record CustomerDTO(
-    @JsonIgnore
     @NotNull(message = "User id can't be empty")
     String id,
 
@@ -20,7 +18,6 @@ public record CustomerDTO(
     @JsonProperty("last_name")
     String lastName,
 
-    @JsonIgnore
     @JsonProperty("email")
     @NotNull(message = "Email can't be empty")
     String email,
@@ -30,7 +27,6 @@ public record CustomerDTO(
     @PhoneNumber(message = "Provide a valid Phone number")
     String contactNumber,
 
-    @JsonIgnore
     @NotNull(message = "Role can't be empty")
     String role
 ) {

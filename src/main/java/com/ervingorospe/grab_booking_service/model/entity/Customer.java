@@ -1,6 +1,7 @@
 package com.ervingorospe.grab_booking_service.model.entity;
 
 import com.ervingorospe.grab_booking_service.model.DTO.BookingRequestDTO;
+import com.ervingorospe.grab_booking_service.model.DTO.CustomerDTO;
 import org.springframework.data.annotation.Id;
 
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -34,6 +35,15 @@ public class Customer {
         this.lastName = bookingRequestDTO.customer().lastName();
         this.contactNumber = bookingRequestDTO.customer().contactNumber();
         this.role = bookingRequestDTO.customer().role();
+    }
+
+    public Customer(CustomerDTO customerDTO) {
+        this.id = customerDTO.id();
+        this.email = customerDTO.email();
+        this.firstName = customerDTO.firstName();
+        this.lastName = customerDTO.lastName();
+        this.contactNumber = customerDTO.contactNumber();
+        this.role = customerDTO.role();
     }
 
     public String getRole() {

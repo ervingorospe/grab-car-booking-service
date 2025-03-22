@@ -1,6 +1,8 @@
 package com.ervingorospe.grab_booking_service.controller;
 
+import com.ervingorospe.grab_booking_service.model.DTO.BookingDTO;
 import com.ervingorospe.grab_booking_service.model.DTO.BookingRequestDTO;
+import com.ervingorospe.grab_booking_service.model.DTO.CustomerDTO;
 import com.ervingorospe.grab_booking_service.model.entity.Booking;
 import com.ervingorospe.grab_booking_service.service.booking.BookingService;
 import jakarta.validation.Valid;
@@ -30,12 +32,17 @@ public class BookingController {
     }
 
     @PostMapping("/create")
-    public ResponseEntity<Booking> saveBooking(@RequestBody @Valid BookingRequestDTO bookingRequestDTO) {
+    public ResponseEntity<BookingDTO> saveBooking(@RequestBody @Valid BookingRequestDTO bookingRequestDTO) {
         return ResponseEntity.status(HttpStatus.CREATED).body(bookingService.save(bookingRequestDTO));
     }
 
     @PutMapping("/cancel/{id}")
-    public ResponseEntity<Booking> cancelBooking(@PathVariable String id) {
+    public ResponseEntity<BookingDTO> cancelBooking(@PathVariable String id) {
         return ResponseEntity.status(HttpStatus.OK).body(bookingService.cancelBooking(id));
+    }
+
+    @PutMapping("/accept/{id}")
+    public ResponseEntity<BookingDTO> acceptBooking(@RequestBody @Valid CustomerDTO customerDTO, @PathVariable String id) {
+        return ResponseEntity.status(HttpStatus.OK).body(bookingService.acceptBooking(customerDTO, id));
     }
 }
