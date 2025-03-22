@@ -27,6 +27,42 @@ public class GlobalErrorHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
 
+    @ExceptionHandler(BookingNotFoundException.class)
+    public ResponseEntity<Map<String,Object>> handleBookingNotFoundException(BookingNotFoundException e, HttpServletRequest request) {
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("timestamp", LocalDateTime.now());
+        errorResponse.put("status", HttpStatus.NOT_FOUND.value());
+        errorResponse.put("error", "Not Found");
+        errorResponse.put("message", e.getMessage());
+        errorResponse.put("path", request.getRequestURI());
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    @ExceptionHandler(BookingCancellationException.class)
+    public ResponseEntity<Map<String,Object>> handleBookingCancellationException(BookingCancellationException e, HttpServletRequest request) {
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("timestamp", LocalDateTime.now());
+        errorResponse.put("status", HttpStatus.BAD_REQUEST.value());
+        errorResponse.put("error", "Booking can not be cancelled");
+        errorResponse.put("message", e.getMessage());
+        errorResponse.put("path", request.getRequestURI());
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    @ExceptionHandler(CustomAccessDeniedException.class)
+    public ResponseEntity<Map<String,Object>> handleCustomAccessDeniedException(CustomAccessDeniedException e, HttpServletRequest request) {
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("timestamp", LocalDateTime.now());
+        errorResponse.put("status", HttpStatus.FORBIDDEN.value());
+        errorResponse.put("error", "Unauthorized");
+        errorResponse.put("message", e.getMessage());
+        errorResponse.put("path", request.getRequestURI());
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     protected ResponseEntity<Object> handleHttpRequestMethodNotSupported(
             HttpRequestMethodNotSupportedException e,

@@ -1,6 +1,8 @@
 package com.ervingorospe.grab_booking_service.service.booking;
 
 import com.ervingorospe.grab_booking_service.constant.BookingStatus;
+import com.ervingorospe.grab_booking_service.handler.error.BookingCancellationException;
+import com.ervingorospe.grab_booking_service.handler.error.BookingNotFoundException;
 import com.ervingorospe.grab_booking_service.model.DTO.BookingRequestDTO;
 import com.ervingorospe.grab_booking_service.model.entity.Booking;
 import com.ervingorospe.grab_booking_service.model.entity.Customer;
@@ -48,5 +50,23 @@ public class BookingServiceImpl implements BookingService {
         );
 
         return bookingRepository.save(booking);
+    }
+
+    @Override
+    @Transactional
+    @PreAuthorize("@securityService.isOwnerOfAccount(#id) && @securityService.isClient(#id")
+    public Booking cancelBooking(String id) {
+        Booking booking = bookingRepository.findById(id).orElseThrow(() -> new BookingNotFoundException("Booking Not Found"));
+
+        if (booking.getPickupTime() == null && booking.getArrivalTime() == null) {
+            changeStatus(booking, BookingStatus.CANCELED); // Assuming you meant CANCELED, not PENDING
+            return bookingRepository.save(booking);
+        }
+
+        throw new BookingCancellationException("Booking cannot be cancelled as the trip has already started.");
+    }
+
+    private void changeStatus(Booking booking, BookingStatus status) throws IllegalArgumentException {
+        booking.setStatus(status.toString());
     }
 }

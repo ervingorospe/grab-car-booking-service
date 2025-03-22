@@ -5,4 +5,5 @@ import com.ervingorospe.grab_booking_service.model.entity.Booking;
 
 public interface BookingService {
     Booking save(BookingRequestDTO bookingRequestDTO);
+    Booking cancelBooking(String id);
 }
