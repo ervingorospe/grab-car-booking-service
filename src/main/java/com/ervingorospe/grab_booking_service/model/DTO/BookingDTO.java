@@ -21,7 +21,7 @@ public record BookingDTO(
             new CustomerResponseDTO(booking.getCustomer()),
             booking.getPickupLocation(),
             booking.getDropOffLocation(),
-            new CustomerResponseDTO(booking.getDriver()),
+            booking.getDriver() != null ? new CustomerResponseDTO(booking.getDriver()) : null,
             booking.getBookingTime(),
             booking.getPickupTime(),
             booking.getArrivalTime(),

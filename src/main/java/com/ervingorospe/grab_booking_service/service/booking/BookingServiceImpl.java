@@ -1,16 +1,20 @@
 package com.ervingorospe.grab_booking_service.service.booking;
 
 import com.ervingorospe.grab_booking_service.constant.BookingStatus;
+import com.ervingorospe.grab_booking_service.handler.error.BookingAssignmentException;
 import com.ervingorospe.grab_booking_service.handler.error.BookingCancellationException;
 import com.ervingorospe.grab_booking_service.handler.error.BookingNotFoundException;
 import com.ervingorospe.grab_booking_service.handler.error.CustomAccessDeniedException;
 import com.ervingorospe.grab_booking_service.model.DTO.BookingDTO;
 import com.ervingorospe.grab_booking_service.model.DTO.BookingRequestDTO;
 import com.ervingorospe.grab_booking_service.model.DTO.CustomerDTO;
+import com.ervingorospe.grab_booking_service.model.DTO.CustomerResponseDTO;
 import com.ervingorospe.grab_booking_service.model.entity.Booking;
 import com.ervingorospe.grab_booking_service.model.entity.Customer;
 import com.ervingorospe.grab_booking_service.repository.BookingRepository;
 import com.ervingorospe.grab_booking_service.repository.CustomerRepository;
+import com.ervingorospe.grab_booking_service.service.customer.CustomerService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
@@ -20,14 +24,15 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
+@Slf4j
 @Service
 public class BookingServiceImpl implements BookingService {
-    private final CustomerRepository customerRepository;
+    private final CustomerService customerService;
     private final BookingRepository bookingRepository;
 
     @Autowired
-    public BookingServiceImpl(CustomerRepository customerRepository, BookingRepository bookingRepository) {
-        this.customerRepository = customerRepository;
+    public BookingServiceImpl(CustomerService customerService, BookingRepository bookingRepository) {
+        this.customerService = customerService;
         this.bookingRepository = bookingRepository;
     }
 
@@ -35,24 +40,19 @@ public class BookingServiceImpl implements BookingService {
     @Transactional
     @PreAuthorize("@securityService.isOwnerOfAccount(#bookingRequestDTO)")
     public BookingDTO save(BookingRequestDTO bookingRequestDTO) {
-        Optional<Customer> existingCustomer = customerRepository.findByEmail(bookingRequestDTO.customer().email());
-
-        Customer customer = existingCustomer.orElseGet(() -> {
-            Customer newCustomer = new Customer(bookingRequestDTO);
-            return customerRepository.save(newCustomer);
-        });
+        Customer customer = customerService.save(bookingRequestDTO.customer());
 
         Booking booking = new Booking(
             UUID.randomUUID().toString(),
             customer.getId(),
-            new Customer(bookingRequestDTO),
+            new Customer(bookingRequestDTO.customer()),
             bookingRequestDTO.pickupLocation(),
             bookingRequestDTO.dropOffLocation(),
             LocalDateTime.now(),
             BookingStatus.PENDING.toString()
         );
 
-        return new BookingDTO(bookingRepository.save(booking));
+        return  new BookingDTO(bookingRepository.save(booking));
     }
 
     @Override
@@ -61,12 +61,12 @@ public class BookingServiceImpl implements BookingService {
     public BookingDTO cancelBooking(String id) {
         Booking booking = this.findBookingById(id);
 
-        if (booking.getPickupTime() == null && booking.getArrivalTime() == null) {
-            changeStatus(booking, BookingStatus.CANCELED); // Assuming you meant CANCELED, not PENDING
+        if (booking.getPickupTime() == null && booking.getStatus().equals(BookingStatus.PENDING.toString())) {
+            changeStatus(booking, BookingStatus.CANCELED);
             return new BookingDTO(bookingRepository.save(booking));
         }
 
-        throw new BookingCancellationException("Booking cannot be cancelled as the trip has already started.");
+        throw new BookingCancellationException("Booking cannot be canceled.");
     }
 
     @Override
@@ -75,12 +75,57 @@ public class BookingServiceImpl implements BookingService {
         Booking booking = this.findBookingById(id);
         Customer driver = new Customer(customerDTO);
 
-        if (booking.getCustomer().getId().equals(driver.getId())) {
-            throw new CustomAccessDeniedException("Can't book own booking");
+        if (booking.getCustomer().getId().equals(driver.getId()) || !booking.getStatus().equals(BookingStatus.PENDING.toString())) {
+            throw new BookingAssignmentException("Can't accept Booking");
         }
 
         booking.setDriver(driver);
         booking.setDriverId(driver.getId());
+        changeStatus(booking, BookingStatus.DRIVER_FOUND);
+
+        return new BookingDTO(bookingRepository.save(booking));
+    }
+
+    @Override
+    @PreAuthorize("@securityService.isTheDriver(#id)")
+    public BookingDTO driverArrived(String id) {
+        Booking booking = this.findBookingById(id);
+
+        if (booking.getDriver() == null) {
+            throw new BookingAssignmentException("Driver cant be empty");
+        }
+
+        changeStatus(booking, BookingStatus.DRIVER_ARRIVED);
+
+        return new BookingDTO(bookingRepository.save(booking));
+    }
+
+    @Override
+    @PreAuthorize("@securityService.isTheDriver(#id)")
+    public BookingDTO pickupBooking(String id) {
+        Booking booking = this.findBookingById(id);
+
+        if (booking.getDriver() == null) {
+            throw new BookingAssignmentException("Driver cant be empty");
+        }
+
+        changeStatus(booking, BookingStatus.IN_PROGRESS);
+        booking.setPickupTime(LocalDateTime.now());
+
+        return new BookingDTO(bookingRepository.save(booking));
+    }
+
+    @Override
+    @PreAuthorize("@securityService.isTheDriver(#id)")
+    public BookingDTO arrivedAtDestination(String id) {
+        Booking booking = this.findBookingById(id);
+
+        if (booking.getDriver() == null && !booking.getStatus().equals(BookingStatus.IN_PROGRESS.toString()) && booking.getPickupTime() == null) {
+            throw new BookingAssignmentException("Booking can't be completed");
+        }
+
+        changeStatus(booking, BookingStatus.COMPLETED);
+        booking.setArrivalTime(LocalDateTime.now());
 
         return new BookingDTO(bookingRepository.save(booking));
     }
@@ -89,7 +134,7 @@ public class BookingServiceImpl implements BookingService {
         booking.setStatus(status.toString());
     }
 
-    private Booking findBookingById(String id) {
+    public Booking findBookingById(String id) {
         return bookingRepository.findById(id).orElseThrow(() -> new BookingNotFoundException("Booking Not Found"));
     }
 }

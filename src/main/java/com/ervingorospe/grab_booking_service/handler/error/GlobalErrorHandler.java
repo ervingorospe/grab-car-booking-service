@@ -60,6 +60,18 @@ public class GlobalErrorHandler {
         errorResponse.put("message", e.getMessage());
         errorResponse.put("path", request.getRequestURI());
 
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+    }
+
+    @ExceptionHandler(BookingAssignmentException.class)
+    public ResponseEntity<Map<String,Object>> handleBookingAssignmentException(BookingAssignmentException e, HttpServletRequest request) {
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("timestamp", LocalDateTime.now());
+        errorResponse.put("status", HttpStatus.BAD_REQUEST.value());
+        errorResponse.put("error", "Bad Request");
+        errorResponse.put("message", e.getMessage());
+        errorResponse.put("path", request.getRequestURI());
+
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
